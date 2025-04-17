@@ -6,10 +6,7 @@ alias ls='ls --color=auto'
 alias ping='ping -c2'
 
 # show all routes.
-alias ipr='ip r ; ip -6 r'
-
-# show all inet stuff.
-alias ipar='ip a ; ipr'
+alias ipr='ip -o r ; ip -o -6 r'
 
 # Edit and reload firewall.
 alias fwedit='nano /etc/nftables.conf ; nft -f /etc/nftables.conf'
