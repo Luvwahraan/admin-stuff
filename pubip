@@ -1,8 +1,9 @@
 #!/bin/bash
 
 if [ ! -z "$1" ]; then
-    echo "Show public addresses for WAN interfaces."
-    echo "It is assumed that ipv4 are behind NAT, but not ipv6."
+    echo "Usage: $0"
+    echo "  Show public addresses for WAN interfaces."
+    echo "  It is assumed that ipv4 are behind NAT, but not ipv6."
     exit 1
 fi
 
