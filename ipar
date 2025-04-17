@@ -1,0 +1,59 @@
+#!/bin/bash
+
+OPT="$1"
+INET=
+if [ ! -z "$OPT" ] ; then
+  if [ "$1" == '-h' ]; then
+      echo "Usage: $0 [inet]"
+      echo "  Display colorized addresses and routes for"
+      echo "  all interfaces, or just the one provided."
+      exit 1
+  else
+    INET="dev $1"
+  fi
+fi
+
+
+
+IPAR_REGEX='
+  s/(nexthop via)/\n \x1b[01;31m→\x1b[0m \1/g
+  /nexthop/ {
+    s/([0-9a-f:.]{25}) /\x1b[1;37m\1\x1b[0m/
+    s/([0-9a-f:.]{26,}) /\x1b[1;37m\1\x1b[0m\\/
+    s/via (.{15}) /\x1b[1;37m\1\x1b[0m/g
+    s/(([0-9]{1,3}\.?){4}) /\x1b[1;37m\1\x1b[0m\\/g
+  }
+  s/(via|src) ([0-9a-f:.]+)/\1 \x1b[1;37m\2\x1b[0m/g
+  s/(state)/\\\ \1/g
+  s/.* linkdown//
+  s/dev/\\\dev/
+  s/(UP|REACHABLE)/\x1b[01;32m\1\x1b[0m/g
+  s/(UNKNOWN|STALE|DELAY)/\x1b[01;34m\1\x1b[0m/g
+  s/(DOWN|FAILED)/\x1b[01;31m\1\x1b[0m/g
+  s/(router)/\x1b[01;36m\1\x1b[0m/g
+  s/default/\x1b[01;31mdefault\x1b[0m/g
+  s/(inet[46]?) /\x1b[1;36m\1\x1b[0m /g
+  s/([0-9a-f:.]+\/[0-9]{1,3})/\x1b[1;37m\1\x1b[0m/g
+  s/(([0-9a-f:.]{2}:){5}[0-9a-f:.]{2})/\x1b[1;37m\1\x1b[0m/g
+  s/ ([a-z]{3,}[0-9]+(([a-z][0-9]+)+)?|lo)([ \\:])/ \x1b[38;5;140m\1\\ \x1b[0m/g
+  s/: ([a-z]{3,}[0-9]+(([a-z][0-9]+)+)?|lo)([ \\:])/: \x1b[38;5;140m\1\\ \x1b[0m/g
+  s/metric ([0-9]+)/\x1b[1;37mmetric \x1b[38;5;214m\1\x1b[0m/g
+  s/ (link|global|host) / \x1b[1;33m\1\x1b[0m /g
+  s/valid_lft|forever|preferred_lft//g
+  s/pref ([a-z]+)//
+  s/(Route|Address|Neigh)/\\\x1b[01;31m\U−−− \1 −−−\L\x1b[0m\n/
+  s/scope/\\\scope/g '
+
+RETURN_TXT=''
+for OBJECT in address route ; do
+  RETURN_TXT="$RETURN_TXT\n${OBJECT^}"
+  while read line ; do
+    RETURN_TXT="$RETURN_TXT\n$line"
+  done <<< $(ip -o -4 $OBJECT show $INET)
+  while read line ; do
+    RETURN_TXT="$RETURN_TXT\n$line"
+  done <<< $(ip -o -6 $OBJECT show $INET)
+done
+echo -e $RETURN_TXT | sed -r "$IPAR_REGEX" | column -t -s '\'
+
+
