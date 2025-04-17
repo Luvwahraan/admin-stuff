@@ -1,1 +1,14 @@
-/usr/bin/pubip
+#!/bin/bash
+
+if [ ! -z "$1" ]; then
+    echo "Show public addresses for WAN interfaces."
+    echo "It is assumed that ipv4 are behind NAT, but not ipv6."
+    exit 1
+fi
+
+for inet in $(ip -6 r | sed -nr '/default/ { :dr ; n ; /nexthop/ { s/.*dev ([a-z0-9]+).*/\1/g ; p ; b dr } }') ; do
+  echo "$inet: "
+  echo -n '  ' ; ip -o -6 a | sed -nr "/$inet/ { /inet6 fe80/ { d } ; s/^.*inet6 (.*) scope.*$/\1/ ; p }"
+  echo -n '  ' ; curl -s --interface $inet monip.org | sed -rn '/^<P ALIGN/ { s/.*IP : ([0-9]+\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*/\1\n/ ; p }'
+done
+
